@@ -1,0 +1,265 @@
+<html itemscope itemtype="http://schema.org/Product" prefix="og: http://ogp.me/ns#" xmlns="http://www.w3.org/1999/html">
+
+<head>
+    <meta charset="utf-8">
+    <!-- <meta http-equiv="content-type" content="text/html; charset=utf-8"> -->
+    
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        .row {
+            width: 1350px;
+        }
+
+        /* Create two unequal columns that floats next to each other */
+        .column {
+            float: left;
+            padding: 10px;
+            height: 1000px;
+            /* Should be removed. Only for demonstration */
+        }
+
+        .left {
+            width: 70%;
+        }
+
+        .right {
+            width: 30%;
+            vertical-align: middle;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        .btn-group button {
+            background-color: #808080;
+            border: 1px solid 808080;
+            color: white;
+            padding: 10px 24px;
+            cursor: pointer;
+            width: 50%;
+            display: block;
+        }
+
+        .btn-group button:not(:last-child) {
+            border-bottom: none;
+        }
+
+        /* Clear floats (clearfix hack) */
+        .btn-group:after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        .btn-group button:hover {
+            background-color: #414040;
+        }
+    </style>
+    <script src="https://meet.jit.si/external_api.js"></script>  <!-- Include the script from here. It should be included in your jitsi installation. -->
+    <script src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
+    <!-- <script type="text/javascript" src="/firebase-messaging-sw.js"></script> -->
+</head>
+
+<body>
+
+    <div class="row">
+        <div class="column left">
+            <div id=meet></div>
+        </div>
+        <div class="column right">
+            <div class="btn-group">
+                <button onclick="api.executeCommand('toggleAudio')">Mute/Unmute Mic</button>    <!-- You can add buttons like this ad infinitum.-->
+                <button onclick="api.executeCommand('muteEveryone')">Mute All</button>          <!-- As for what you can do with them;-->
+                <button onclick="api.executeCommand('toggleVideo')">Stop/Start Cam</button>     <!-- check https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe -->
+                <button onclick="alert('This one is tricky and should be customized according to need')">Cam/Mic</button>
+                <button onclick="api.executeCommand('toggleShareScreen')">Share Screen</button>
+                <button id="stream-btn" onclick="streamHandler()">Start Steam</button>          <!-- I've made a function here.-->
+                <button onclick="api.dispose()">Dispose</button>  
+                <button onclick="api.executeCommand('pinParticipant', '33')">pin</button>
+            </div>
+            <div>
+                <span id="streamingResponseMsg"></span>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script type="module">
+    // // use websocket
+    var userName = makeRandomName();
+    // var socket = io.connect('http://localhost:3000');
+    // socket.emit("login", {
+    //     name : userName
+    // });
+
+    function makeRandomName(){
+      var name = "";
+      var possible = "abcdefghijklmnopqrstuvwxyz";
+      for( var i = 0; i < 3; i++ ) {
+        name += possible.charAt(Math.floor(Math.random() * possible.length));
+      }
+      return name;
+    }
+        // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+        
+        apiKey: "AIzaSyDYjjUVxk2Td3a2ejMOgvnUdzNgPUftWFo",
+        authDomain: "react-fcm-e48f7.firebaseapp.com",
+        projectId: "react-fcm-e48f7",
+        storageBucket: "react-fcm-e48f7.appspot.com",
+        messagingSenderId: "75282346886",
+        appId: "1:75282346886:web:dacb75fc75f798f3f2f207",
+        measurementId: "G-XC30GK4G8B"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+
+    function requestPermission() {
+        console.log('Requesting permission...');
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                console.log('Notification permission granted.');
+                // Initialize Firebase
+            const app = initializeApp(firebaseConfig);
+            const messaging = getMessaging(app);
+    
+            // messaging.useServiceWorker(new URL('/firebase-messaging-sw.js', window.location.href));
+            // Initialize Firebase Cloud Messaging and get a reference to the service
+            
+            getToken(messaging, { vapidKey: 'BJlb90IyS1ucoGVEHKcmXw0n0vPXVRtjfXXSnqwoPEVyq1JVmEaGDESPvi57BF9VNgRTNGhDHWlKdEubNqYZIzU' })
+                .then((currentToken) => {
+                    if (currentToken) {
+                        console.log('currentToken : ', currentToken);
+                    } else {
+                        console.log('Can not get Token');
+                    }
+                });
+    
+                onMessage(messaging, (payload) => {
+                    console.log('Received foreground message', payload);
+                    if(payload.notification.body === '초대') {
+                        console.log('hi')
+                        location.href = 'webrtc';
+                    }
+                })  
+
+                    // // const domain = "meet.jit.si"; //Here goes your domain where the meeting takes place.
+                    // const domain = "www.handsomeung.co.kr:20000/external_api.js"
+                    // var isStreamOn = false; //This is a variable I've defined to use later.
+                    // const options = {
+                    //     roomName: "iframeexample", //This is the name of the room. Quite obvious.
+                    //     width: 1000,                //Well, you know.
+                    //     height: 1000,                //Same as above, just vertical.
+                    //     parentNode: document.querySelector('#meet'), //Now, you declare here which element should parent your stream.
+                    //     configOverwrite: {startWithAudioMuted: true, startWithVideoMuted: false}, //You can turn on or off config elements with this prop.
+                    //     interfaceConfigOverwrite: { TOOLBAR_BUTTONS: [] },  //You can turn on or off interface elements with this prop. check https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe for details
+                    //     // jwt: 'yourtokenhere' //Here, you should pass a JWT token for authorization purposes. If you're using jitsi-token-moderation or simiar, make sure the token you pass can start streams
+                    // }
+                    // const api = new JitsiMeetExternalAPI(domain, options); //This is where the iframe is actually constructed
+                    // //The function below turns on the Tile View everytime a participant joins. Practically it makes Tile View the default mode
+                    // api.addEventListener(`videoConferenceJoined`, () => {
+                    //     const listener = ({ enabled }) => {
+                    //         api.removeEventListener(`tileViewChanged`, listener);
+
+                    //         if (!enabled) {
+                    //             api.executeCommand(`toggleTileView`);
+                    //         }
+                    //     };
+                    // });
+                    // api.executeCommand('displayName', userName);
+                    // // api.setLargeVideoParticipant('1');
+                    // // api.executeCommand('setLargeVideoParticipant', 'ung', 'dsektop');
+
+                    // // 비디오가 꺼져있으면 비디오를 킴
+                    // // api.isVideoMuted().then(muted => {
+                    // //     console.log('video off')
+                    // //     api.executeCommand('toggleVideo')
+                    // // });
+
+
+                    // function streamHandler() {
+                    //     try {
+                    //         if (!isStreamOn) {
+                    //             document.getElementById("streamingResponseMsg").innerHTML = "Starting streaming...";
+                    //             //The function below starts the stream or recording, according to its "mode"
+                    //             api.executeCommand('startRecording', {
+                    //                 mode: 'stream', //recording mode, either `file` or `stream`.
+                    //                 rtmpStreamKey: '', //This where you *should* put your favoured rtmp stream server along with your key, like "rtmp:\/\/some.address/norecord/stream-key"
+                    //                 youtubeStreamKey: 'rtmp:\/\/some.address/norecord/stream-key', //the youtube stream key.
+                    //             });
+                    //         } else {
+                    //             document.getElementById("streamingResponseMsg").innerHTML = "Stopping streaming...";
+                    //             //The function below stops the stream or recording, according to the string you pass. Official guide shows an object, while it should be a string
+                    //             api.executeCommand('stopRecording', 'stream');
+                    //         }
+
+                    //     }
+                    //     catch (e){
+                    //         if (isStreamOn){
+                    //             document.getElementById("streamingResponseMsg").innerHTML = "Error while stopping stream.";
+                    //             console.log("Exception while stopping stream.", e);
+                    //         }else{
+                    //             document.getElementById("streamingResponseMsg").innerHTML = "Error while starting stream.";
+                    //             console.log("Exception while starting stream.", e);
+
+                    //         }    
+                    //         this.isStreamOn = false;
+                    //     }
+                    // };
+                    //     //This part doesn't work without making some changes to the code as per this; https://github.com/team-ai-repo/jitsi-meet/pull/4/files
+                    // api.addEventListener("recordingStarted", () => {
+                    //     document.getElementById("stream-btn").innerHTML="Stop Streaming";
+                    //     document.getElementById("streamingResponseMsg").innerHTML = "Stream is on";
+                    //     this.isStreamOn = true;
+                    //     console.log("Example Stream On", this.isStreamOn);
+                    //     });
+
+                    //     api.addEventListener("recordingStopped", () => {
+                    //     document.getElementById("stream-btn").innerHTML="Start Streaming";
+                    //     document.getElementById("streamingResponseMsg").innerHTML = "Stream is off";
+                    //     console.log("Example Stream Off", this.isStreamOn);
+                    //     this.isStreamOn = false;
+                    // });
+
+        
+
+                    // // 방에 사람이 들어오면 실행되는 이벤트리스너
+                    // // 이를 통해 Master id를 탐색해서 pin으로 고정(pin으로 고정하면 그 화면이 크게나옴, pin으로 고정안하면 사람수의 맞게 비율 조절되서 전체비디오 나옴, 1:n 방송느낌을 주기위해 이렇게 설정)
+                    // api.addEventListener("participantJoined", (event) => {
+                    //     console.log('event hi', event.displayName);
+                    //     if (event.displayName === 'master') {
+                    //         api.executeCommand('pinParticipant', event.id);
+                    //         // api.pinParticipant(event.displayName, 'desktop');
+                    //     } 
+                    // });
+                } else {
+                    console.log('Do not have permission');
+                }
+            });
+        }
+
+    requestPermission();
+
+    
+
+
+</script>
+
+</html>
+

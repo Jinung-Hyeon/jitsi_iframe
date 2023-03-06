@@ -1,0 +1,189 @@
+<html itemscope itemtype="http://schema.org/Product" prefix="og: http://ogp.me/ns#" xmlns="http://www.w3.org/1999/html">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        .row {
+            width: 1350px;
+        }
+
+        /* Create two unequal columns that floats next to each other */
+        .column {
+            float: left;
+            padding: 10px;
+            height: 1000px;
+            /* Should be removed. Only for demonstration */
+        }
+
+        .left {
+            width: 70%;
+        }
+
+        .right {
+            width: 30%;
+            vertical-align: middle;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        .btn-group button {
+            background-color: #808080;
+            border: 1px solid 808080;
+            color: white;
+            padding: 10px 24px;
+            cursor: pointer;
+            width: 50%;
+            display: block;
+        }
+
+        .btn-group button:not(:last-child) {
+            border-bottom: none;
+        }
+
+        /* Clear floats (clearfix hack) */
+        .btn-group:after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        .btn-group button:hover {
+            background-color: #414040;
+        }
+    </style>
+    <script src="https://meet.jit.si/external_api.js"></script>  <!-- Include the script from here. It should be included in your jitsi installation. -->
+    <script src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
+    
+</head>
+
+<body>
+
+    <div class="row">
+        <div class="column left">
+            <div id=meet></div>
+        </div>
+        <div class="column right">
+            <div class="btn-group">
+                <button id='toggleAudio'>Mute/Unmute Mic</button>    <!-- You can add buttons like this ad infinitum.-->
+                <button id='muteEveryone'>Mute All</button>          <!-- As for what you can do with them;-->
+                <button id='toggleVideo'>Stop/Start Cam</button>     <!-- check https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe -->
+                
+                <button id='disposeJitsi'>Dispose</button>  
+                <button id='inviteClient'>invite</button>
+                <button id='kickClient'>kickAll</button>
+            </div>
+            <div>
+                <span id="streamingResponseMsg"></span>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="module">
+    import myOptions from '/options.js';
+
+    // use websocket
+
+    var userName = makeRandomName();
+    var socket = io.connect('https://www.handsomeung.co.kr:10000');
+    socket.emit("login", {
+        name : userName
+    });
+
+    const toggleAudio = document.querySelector('#toggleAudio');
+    const muteEveryone = document.querySelector('#muteEveryone');
+    const toggleVideo = document.querySelector('#toggleVideo');
+    const disposeJitsi = document.querySelector('#disposeJitsi');
+    const inviteClient = document.querySelector('#inviteClient');
+    const kickClient = document.querySelector('#kickClient');
+    
+
+    
+
+    function makeRandomName(){
+      var name = "";
+      var possible = "abcdefghijklmnopqrstuvwxyz";
+      for( var i = 0; i < 3; i++ ) {
+        name += possible.charAt(Math.floor(Math.random() * possible.length));
+      }
+      return name;
+    }
+
+    
+
+    
+
+    // const domain = "meet.jit.si"; //Here goes your domain where the meeting takes place.
+    const domain = "www.handsomeung.co.kr:20000/external_api.js"
+    var isStreamOn = false; //This is a variable I've defined to use later.
+    const api = new JitsiMeetExternalAPI(domain, myOptions); //This is where the iframe is actually constructed
+    //The function below turns on the Tile View everytime a participant joins. Practically it makes Tile View the default mode
+    api.addEventListener(`videoConferenceJoined`, () => {
+        const listener = ({ enabled }) => {
+            api.removeEventListener(`tileViewChanged`, listener);
+
+            if (!enabled) {
+                api.executeCommand(`toggleTileView`);
+            }
+        };
+    });
+    api.executeCommand('displayName', 'master');
+    // api.setLargeVideoParticipant('1');
+    // api.executeCommand('setLargeVideoParticipant', 'ung', 'dsektop');
+
+    // 비디오가 꺼져있으면 비디오를 킴
+    // api.isVideoMuted().then(muted => {
+    //     console.log('video off')
+    //     api.executeCommand('toggleVideo')
+    // });
+
+    
+    toggleAudio.addEventListener('click', toggle_audio);
+    muteEveryone.addEventListener('click', muteAll);
+    toggleVideo.addEventListener('click', toggle_video);
+    disposeJitsi.addEventListener('click', dispose);
+    inviteClient.addEventListener('click', invite);
+    kickClient.addEventListener('click', kickAll);
+
+    function toggle_audio() {
+        api.executeCommand('toggleAudio')
+    }
+
+    function muteAll() {
+        api.executeCommand('muteEveryone')
+    }
+
+    function toggle_video() {
+        api.executeCommand('toggleVideo')
+    }
+
+    function dispose() {
+        api.dispose();
+    }
+
+    function invite() {
+        socket.emit('invite',{
+
+        });
+    }
+
+    function kickAll() {
+        socket.emit('kickAll', {
+
+        })
+    }
+
+</script>
+
+</html>
+
